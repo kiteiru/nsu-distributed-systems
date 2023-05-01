@@ -1,0 +1,37 @@
+plugins {
+    id 'application'
+    id 'org.springframework.boot' version '3.0.4'
+}
+
+group 'ru.kiteiru'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+    implementation 'javax.xml.bind:jaxb-api:2.3.1'
+    implementation 'org.glassfish.jaxb:jaxb-runtime:4.0.0'
+    implementation 'org.springframework.boot:spring-boot-starter-web:3.0.4'
+    implementation 'org.springframework.boot:spring-boot-starter-web-services:3.0.4'
+    implementation 'com.googlecode.combinatoricslib:combinatoricslib:2.3'
+    implementation 'org.apache.httpcomponents.client5:httpclient5:5.2.1'
+}
+
+application {
+    mainClass = 'ru.kiteiru.Worker'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+jar {
+    manifest {
+        attributes(
+            'Main-Class': 'ru.kiteiru.Worker'
+        )
+    }
+}
