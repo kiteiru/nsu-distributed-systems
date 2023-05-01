@@ -1,0 +1,33 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group 'ru.kiteiru'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.slf4j:slf4j-parent:2.0.5'
+    implementation 'com.tersesystems.logback:logback-classic:1.1.1'
+    implementation 'com.tersesystems.logback:logback-core:1.1.1'
+    implementation 'org.apache.commons:commons-compress:1.21'
+    implementation 'commons-cli:commons-cli:1.5.0'
+    implementation 'name.remal.gradle-plugins.lombok:lombok:2.0.2'
+    implementation 'org.apache.logging.log4j:log4j:2.20.0'
+    implementation 'commons-logging:commons-logging:1.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+
+}
+
+application {
+    mainClass = 'ru.kiteiru.Main'
+}
+
+test {
+    useJUnitPlatform()
+}
