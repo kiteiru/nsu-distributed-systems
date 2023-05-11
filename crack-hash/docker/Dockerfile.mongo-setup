@@ -1,0 +1,7 @@
+FROM mongo:4
+RUN mkdir /config
+WORKDIR /config
+COPY wait-for-it.sh .
+COPY mongo-setup-rs.js .
+COPY mongo-setup.sh .
+CMD [ "bash", "-c", "/config/wait-for-it.sh docker-mongodb-1:27017 -- /config/mongo-setup.sh"]

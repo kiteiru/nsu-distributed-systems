@@ -1,6 +1,9 @@
 package ru.kiteiru.service;
 
 import jakarta.xml.bind.DatatypeConverter;
+import ru.kiteiru.types.CrackHashManagerRequest;
+import ru.kiteiru.types.CrackHashWorkerResponse;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.support.NullValue;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
@@ -8,6 +11,8 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.ws.wsdl.wsdl11.provider.SoapProvider;
 import org.paukov.combinatorics.Generator;
+import org.springframework.amqp.core.AmqpTemplate;
+import org.springframework.amqp.core.Queue;
 
 import java.security.MessageDigest;
 import java.time.Duration;
@@ -20,16 +25,18 @@ import org.paukov.combinatorics.ICombinatoricsVector;
 import org.paukov.combinatorics.permutations.PermutationGenerator;
 import org.paukov.combinatorics.util.ComplexCombinationGenerator;
 
-import ru.kiteiru.json.CrackHashManagerRequest;
-import ru.kiteiru.json.CrackHashWorkerResponse;
-
 @Service
 public class WorkerService {
 
-    private final RestTemplate restTemplate = new RestTemplate(new HttpComponentsClientHttpRequestFactory());
+    // private final RestTemplate restTemplate = new RestTemplate(new HttpComponentsClientHttpRequestFactory());
     private final Duration taskTimeout = Duration.parse("PT5M");
 
-    @Async
+    @Autowired
+    AmqpTemplate rabbitTemplate;
+
+    @Autowired
+    private Queue responseQueue;
+
     public void crackHashTask(CrackHashManagerRequest body) {
         String ALPHABET = String.join("", body.getAlphabet().getSymbols());
         int ALPHABET_SIZE = ALPHABET.length();
@@ -63,8 +70,7 @@ public class WorkerService {
                 byte[] combHash = md5.digest(str.toString().getBytes());
                 if (Arrays.equals(combHash, HASH)) {
                     System.out.println("I found hash: " + str.toString());
-                    
-                    sendAnswer(body.getRequestId(), str);
+                    sendAnswer(body.getRequestId(), str, MY_PART_IDX);
                 }
             }
 
@@ -77,19 +83,19 @@ public class WorkerService {
             idx++;
 
         }
+        sendAnswer(body.getRequestId(), "", MY_PART_IDX);
         System.out.println("End count permutations...");
 
     }
 
-    private void sendAnswer(String id, String answer) {
-        String managerUrl = "http://manager:8080";
-
+    private void sendAnswer(String id, String answer, Integer partNumber) {
         CrackHashWorkerResponse response = new CrackHashWorkerResponse();
         response.setRequestId(id);
         response.setAnswers(new CrackHashWorkerResponse.Answers());
         response.getAnswers().getWords().add(answer);
+        response.setPartNumber(partNumber);
 
-        restTemplate.patchForObject(managerUrl + "/internal/api/manager/hash/crack/request", response, Void.class);
+        rabbitTemplate.convertAndSend(responseQueue.getName(), response);
     }
 
 }

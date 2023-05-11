@@ -1,4 +1,4 @@
-package ru.kiteiru.json;
+package ru.kiteiru.types;
 
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;

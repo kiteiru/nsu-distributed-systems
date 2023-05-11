@@ -18,6 +18,8 @@ dependencies {
     implementation 'org.glassfish.jaxb:jaxb-runtime:4.0.0'
     implementation 'org.springframework.boot:spring-boot-starter-web:3.0.4'
     implementation 'org.springframework.boot:spring-boot-starter-web-services:3.0.4'
+    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb:3.0.4'
+    implementation 'org.springframework.boot:spring-boot-starter-amqp:3.0.4'
 }
 
 application {

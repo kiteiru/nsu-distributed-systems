@@ -4,10 +4,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import ru.kiteiru.json.HashAndLength;
-import ru.kiteiru.json.RequestId;
-import ru.kiteiru.json.TaskStatus;
 import ru.kiteiru.service.ManagerService;
+import ru.kiteiru.types.HashAndLength;
+import ru.kiteiru.types.RequestId;
+import ru.kiteiru.types.Task;
 
 @RestController
 @RequestMapping("/api")
@@ -26,7 +26,7 @@ public class Controller {
     }
 
     @GetMapping("/hash/status")
-    public TaskStatus getMessage(RequestId id) {
+    public Task getMessage(RequestId id) {
         return service.getTaskStatus(id);
     }
 }

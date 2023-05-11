@@ -7,30 +7,44 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.amqp.core.AmqpTemplate;
+import org.springframework.amqp.core.Queue;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
 
 import jakarta.security.auth.message.callback.PrivateKeyCallback.Request;
-import ru.kiteiru.json.CrackHashManagerRequest;
-import ru.kiteiru.json.CrackHashWorkerResponse;
-import ru.kiteiru.json.HashAndLength;
-import ru.kiteiru.json.RequestId;
-import ru.kiteiru.json.TaskStatus;
+
+import ru.kiteiru.types.CrackHashManagerRequest;
+import ru.kiteiru.types.CrackHashWorkerResponse;
+import ru.kiteiru.types.HashAndLength;
+import ru.kiteiru.types.RequestId;
+import ru.kiteiru.types.Task;
+import ru.kiteiru.repository.TaskRepository;
 
 @Service
 public class ManagerService {
 
     private final RestTemplate restTemplate = new RestTemplate();
-    private ConcurrentHashMap<RequestId, TaskStatus> idAndStatus;
     private final static String LETTERS_AND_DIGITS = "abcdefghijklmnopqrstuvwxyz0123456789";
     private final Duration taskTimeout = Duration.parse("PT5M");
 
-    public ManagerService() {
-        this.idAndStatus = new ConcurrentHashMap<RequestId, TaskStatus>();
-    }
+    @Autowired
+    private TaskRepository taskRepository;
+
+    @Autowired
+    AmqpTemplate rabbitTemplate;
+
+    @Autowired
+    private Queue requestQueue;
+
+    @Autowired
+    MongoTemplate mongoTemplate;
 
     private CrackHashManagerRequest.Alphabet initAlphabet() {
         CrackHashManagerRequest.Alphabet alphabet = new CrackHashManagerRequest.Alphabet();
@@ -45,11 +59,7 @@ public class ManagerService {
 
     public RequestId getRequestId(HashAndLength body) {
 
-        List<String> addresses = getWorkers();
-
         RequestId requestId = new RequestId(UUID.randomUUID().toString());
-        idAndStatus.put(requestId, new TaskStatus());
-
 
         CrackHashManagerRequest request = new CrackHashManagerRequest();
 
@@ -65,58 +75,59 @@ public class ManagerService {
         // request.setPartNumber(0); // какая по счету часть достается воркеру
         // restTemplate.postForObject(workerUrl + "/internal/api/worker/hash/crack/task", request, Void.class);
 
+        taskRepository.save(new Task(requestId.getRequestId(), body.getHash(), body.getMaxLength(), partCount));
+
         for (int part = 0; part < partCount; part++) {
-            int addrIdx = part % addresses.size();
-            String addr = addresses.get(addrIdx);
-            String workerUrl = "http://" + addr + ":8081";
             request.setPartNumber(part); // какая по счету часть достается воркеру
-            restTemplate.postForObject(workerUrl + "/internal/api/worker/hash/crack/task", request, Void.class);
+            rabbitTemplate.convertAndSend(requestQueue.getName(), request);
         }
 
 
         return requestId;
     }
 
-    public TaskStatus getTaskStatus(RequestId id) {
-        TaskStatus status = idAndStatus.get(id);
-        System.out.println(status.toString());
+    public Task getTaskStatus(RequestId id) {
 
-        Duration dur = Duration.between(status.getStartTime(), Instant.now());
-        if (dur.toMillis() > taskTimeout.toMillis() && status.getAnswer().isEmpty()) {
-            status.setStatus("TIMEOUT");
+        Optional<Task> result = taskRepository.findById(id.getRequestId());
+        if (result.isEmpty()){
+            return new Task("NOT_FOUND");
+        }
+        Task task = result.get();
+
+        Duration dur = Duration.between(task.getStartTime(), Instant.now());
+        if (dur.toMillis() > taskTimeout.toMillis() && task.getAnswer().isEmpty()) {
+            task.setStatus("TIMEOUT");
+            taskRepository.save(task);
         }
 
-        return status;
+        return task;
     }
 
     public void recieveAnswer(CrackHashWorkerResponse response) {
-        if (response.getAnswers().getWords().isEmpty()) {
+        Optional<Task> result = taskRepository.findById(response.getRequestId());
+        if (result.isEmpty()) {
             return;
         }
+        Task task = result.get();
 
-        TaskStatus status = idAndStatus.get(new RequestId(response.getRequestId()));
-        if (status == null) {
-            return;
-        }
-        System.out.println(status);
+        List<String> words = response.getAnswers().getWords();
 
-        status.getAnswer().addAll(response.getAnswers().getWords());
-        status.setStatus("READY");
-    }
-
-    public List<String> getWorkers() {
-        InetAddress[] machines = null;
-        try {
-            machines = InetAddress.getAllByName("worker");
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (words.get(0).equals("")) {
+            task.getFinishedParts().add(response.getPartNumber());
+            if (task.getPartCount() == task.getFinishedParts().size()) {
+                task.setStatus("READY");
+            }    
+        } else {
+            System.out.println("Received answer from part "+ response.getPartNumber() + ": " + words.toString() +
+                                ", took: " + Duration.between(task.getStartTime(), Instant.now()).toMillis() / 1000 + "s");
         }
         
-        List<String> addresses = new ArrayList<>();
-        for(InetAddress address : machines){
-            addresses.add(address.getHostAddress());
-            System.out.println(address.getHostAddress());
+        for (String word : words) {
+            if (!task.getAnswer().contains(word) && !word.equals("")) {
+                task.getAnswer().add(word);
+            }
         }
-        return addresses;
+        
+        taskRepository.save(task);
     }
 }

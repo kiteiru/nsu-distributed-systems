@@ -1,4 +1,5 @@
-package ru.kiteiru.json;
+
+package ru.kiteiru.types;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,15 +22,12 @@ import jakarta.xml.bind.annotation.XmlType;
  *       &lt;sequence&gt;
  *         &lt;element name="RequestId" type="{http://www.w3.org/2001/XMLSchema}string"/&gt;
  *         &lt;element name="PartNumber" type="{http://www.w3.org/2001/XMLSchema}int"/&gt;
- *         &lt;element name="PartCount" type="{http://www.w3.org/2001/XMLSchema}int"/&gt;
- *         &lt;element name="Hash" type="{http://www.w3.org/2001/XMLSchema}string"/&gt;
- *         &lt;element name="MaxLength" type="{http://www.w3.org/2001/XMLSchema}int"/&gt;
- *         &lt;element name="Alphabet"&gt;
+ *         &lt;element name="Answers"&gt;
  *           &lt;complexType&gt;
  *             &lt;complexContent&gt;
  *               &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType"&gt;
  *                 &lt;sequence&gt;
- *                   &lt;element name="symbols" type="{http://www.w3.org/2001/XMLSchema}string" maxOccurs="unbounded" minOccurs="0"/&gt;
+ *                   &lt;element name="words" type="{http://www.w3.org/2001/XMLSchema}string" maxOccurs="unbounded" minOccurs="0"/&gt;
  *                 &lt;/sequence&gt;
  *               &lt;/restriction&gt;
  *             &lt;/complexContent&gt;
@@ -47,26 +45,17 @@ import jakarta.xml.bind.annotation.XmlType;
 @XmlType(name = "", propOrder = {
     "requestId",
     "partNumber",
-    "partCount",
-    "hash",
-    "maxLength",
-    "alphabet"
+    "answers"
 })
-@XmlRootElement(name = "CrackHashManagerRequest", namespace = "http://ccfit.nsu.ru/schema/crack-hash-request")
-public class CrackHashManagerRequest {
+@XmlRootElement(name = "CrackHashWorkerResponse", namespace = "http://ccfit.nsu.ru/schema/crack-hash-response")
+public class CrackHashWorkerResponse {
 
-    @XmlElement(name = "RequestId", namespace = "http://ccfit.nsu.ru/schema/crack-hash-request", required = true)
+    @XmlElement(name = "RequestId", required = true)
     protected String requestId;
-    @XmlElement(name = "PartNumber", namespace = "http://ccfit.nsu.ru/schema/crack-hash-request")
+    @XmlElement(name = "PartNumber")
     protected int partNumber;
-    @XmlElement(name = "PartCount", namespace = "http://ccfit.nsu.ru/schema/crack-hash-request")
-    protected int partCount;
-    @XmlElement(name = "Hash", namespace = "http://ccfit.nsu.ru/schema/crack-hash-request", required = true)
-    protected String hash;
-    @XmlElement(name = "MaxLength", namespace = "http://ccfit.nsu.ru/schema/crack-hash-request")
-    protected int maxLength;
-    @XmlElement(name = "Alphabet", namespace = "http://ccfit.nsu.ru/schema/crack-hash-request", required = true)
-    protected CrackHashManagerRequest.Alphabet alphabet;
+    @XmlElement(name = "Answers", required = true)
+    protected CrackHashWorkerResponse.Answers answers;
 
     /**
      * Gets the value of the requestId property.
@@ -109,83 +98,27 @@ public class CrackHashManagerRequest {
     }
 
     /**
-     * Gets the value of the partCount property.
-     * 
-     */
-    public int getPartCount() {
-        return partCount;
-    }
-
-    /**
-     * Sets the value of the partCount property.
-     * 
-     */
-    public void setPartCount(int value) {
-        this.partCount = value;
-    }
-
-    /**
-     * Gets the value of the hash property.
+     * Gets the value of the answers property.
      * 
      * @return
      *     possible object is
-     *     {@link String }
+     *     {@link CrackHashWorkerResponse.Answers }
      *     
      */
-    public String getHash() {
-        return hash;
+    public CrackHashWorkerResponse.Answers getAnswers() {
+        return answers;
     }
 
     /**
-     * Sets the value of the hash property.
+     * Sets the value of the answers property.
      * 
      * @param value
      *     allowed object is
-     *     {@link String }
+     *     {@link CrackHashWorkerResponse.Answers }
      *     
      */
-    public void setHash(String value) {
-        this.hash = value;
-    }
-
-    /**
-     * Gets the value of the maxLength property.
-     * 
-     */
-    public int getMaxLength() {
-        return maxLength;
-    }
-
-    /**
-     * Sets the value of the maxLength property.
-     * 
-     */
-    public void setMaxLength(int value) {
-        this.maxLength = value;
-    }
-
-    /**
-     * Gets the value of the alphabet property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link CrackHashManagerRequest.Alphabet }
-     *     
-     */
-    public CrackHashManagerRequest.Alphabet getAlphabet() {
-        return alphabet;
-    }
-
-    /**
-     * Sets the value of the alphabet property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link CrackHashManagerRequest.Alphabet }
-     *     
-     */
-    public void setAlphabet(CrackHashManagerRequest.Alphabet value) {
-        this.alphabet = value;
+    public void setAnswers(CrackHashWorkerResponse.Answers value) {
+        this.answers = value;
     }
 
 
@@ -199,7 +132,7 @@ public class CrackHashManagerRequest {
      *   &lt;complexContent&gt;
      *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType"&gt;
      *       &lt;sequence&gt;
-     *         &lt;element name="symbols" type="{http://www.w3.org/2001/XMLSchema}string" maxOccurs="unbounded" minOccurs="0"/&gt;
+     *         &lt;element name="words" type="{http://www.w3.org/2001/XMLSchema}string" maxOccurs="unbounded" minOccurs="0"/&gt;
      *       &lt;/sequence&gt;
      *     &lt;/restriction&gt;
      *   &lt;/complexContent&gt;
@@ -210,26 +143,25 @@ public class CrackHashManagerRequest {
      */
     @XmlAccessorType(XmlAccessType.FIELD)
     @XmlType(name = "", propOrder = {
-        "symbols"
+        "words"
     })
-    public static class Alphabet {
+    public static class Answers {
 
-        @XmlElement(namespace = "http://ccfit.nsu.ru/schema/crack-hash-request")
-        protected List<String> symbols;
+        protected List<String> words;
 
         /**
-         * Gets the value of the symbols property.
+         * Gets the value of the words property.
          * 
          * <p>
          * This accessor method returns a reference to the live list,
          * not a snapshot. Therefore any modification you make to the
          * returned list will be present inside the Jakarta XML Binding object.
-         * This is why there is not a <CODE>set</CODE> method for the symbols property.
+         * This is why there is not a <CODE>set</CODE> method for the words property.
          * 
          * <p>
          * For example, to add a new item, do as follows:
          * <pre>
-         *    getSymbols().add(newItem);
+         *    getWords().add(newItem);
          * </pre>
          * 
          * 
@@ -239,11 +171,11 @@ public class CrackHashManagerRequest {
          * 
          * 
          */
-        public List<String> getSymbols() {
-            if (symbols == null) {
-                symbols = new ArrayList<String>();
+        public List<String> getWords() {
+            if (words == null) {
+                words = new ArrayList<String>();
             }
-            return this.symbols;
+            return this.words;
         }
 
     }

@@ -11,6 +11,9 @@ services:
         SERVICE_PORT: 8080
     ports:
       - "8080:8080"
+    depends_on:
+      - mongodb
+      - rabbitmq
 
   worker:
     build:
@@ -20,3 +23,29 @@ services:
         SERVICE: worker
     deploy:
       replicas: 1
+    depends_on:
+      - rabbitmq
+
+  rabbitmq:
+    container_name: "rabbitmq"
+    image: rabbitmq:3.8-management-alpine
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    volumes:
+      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./definitions.json:/etc/rabbitmq/definitions.json:ro
+    ports:
+      - "15672:15672"
+
+  mongodb:
+    image: mongo:4
+    entrypoint: [ "/usr/bin/mongod", "--replSet", "rsmongo", "--bind_ip_all", "--wiredTigerCacheSizeGB", "1", "--quiet", "--logpath", "/dev/null"]
+    deploy:
+      replicas: 3
+
+  mongosetup:
+    build:
+      dockerfile: Dockerfile.mongo-setup
+    depends_on:
+        - mongodb
